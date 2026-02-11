@@ -1,0 +1,382 @@
+{
+  "name": "Luxe Studio — Website Chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "luxe-chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 528],
+      "id": "luxe-webhook-01",
+      "name": "Webhook: Chat Message",
+      "webhookId": "luxe-chat"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Extract and validate chat message from webhook\n * Expected: { message, sessionId, userName }\n */\n\nconst webhookData = $input.first().json;\n\nconst userMessage = webhookData.message || webhookData.query || webhookData.text || \"\";\nconst sessionId = webhookData.sessionId || webhookData.session_id || `session_${Date.now()}`;\nconst userName = webhookData.userName || webhookData.user_name || \"there\";\n\nif (!userMessage || userMessage.trim() === \"\") {\n  return [{\n    json: {\n      error: true,\n      response: \"I didn't receive a message. How can I help you with Luxe Studio?\",\n      sessionId: sessionId\n    }\n  }];\n}\n\nconst greetings = [\"hi\", \"hello\", \"hey\", \"good morning\", \"good afternoon\", \"good evening\"];\nconst messageLower = userMessage.toLowerCase().trim();\nconst isGreeting = greetings.some(g => messageLower === g || messageLower.startsWith(g + \" \"));\n\nconsole.log(`💬 Luxe Chat | Session: ${sessionId} | User: ${userName} | Message: ${userMessage}`);\n\nreturn [{\n  json: {\n    userMessage: userMessage,\n    sessionId: sessionId,\n    userName: userName,\n    isGreeting: isGreeting,\n    timestamp: new Date().toISOString(),\n    error: false\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [424, 528],
+      "id": "luxe-parse-02",
+      "name": "Parse Chat Message"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [648, 528],
+      "id": "luxe-validate-03",
+      "name": "Valid Message?"
+    },
+    {
+      "parameters": {
+        "operation": "readFile",
+        "filePath": "=LUXE_STUDIO_KNOWLEDGE_BASE.md",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [944, 528],
+      "id": "luxe-readkb-04",
+      "name": "Read Knowledge Base",
+      "alwaysOutputData": true,
+      "notes": "UPDATE THIS PATH to the absolute path of LUXE_STUDIO_KNOWLEDGE_BASE.md on your server"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 800
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [200, -288],
+      "id": "luxe-llm-05",
+      "name": "OpenAI Chat Model (GPT-4o)",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Parse Chat Message').item.json.sessionId }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [200, -80],
+      "id": "luxe-memory-06",
+      "name": "Chat Memory (10 messages)"
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.data }}",
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [408, 944],
+      "id": "luxe-doc-07",
+      "name": "Load Knowledge Base Document"
+    },
+    {
+      "parameters": {
+        "chunkSize": 2000,
+        "chunkOverlap": 200,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [200, 944],
+      "id": "luxe-split-08",
+      "name": "Split into Chunks"
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-small",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1,
+      "position": [272, 1480],
+      "id": "luxe-embed-09",
+      "name": "OpenAI Embeddings"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "memoryKey": {
+          "__rl": true,
+          "mode": "list",
+          "value": "vector_store_key"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [200, 1256],
+      "id": "luxe-vector-10",
+      "name": "In-Memory Vector Store"
+    },
+    {
+      "parameters": {
+        "topK": 5
+      },
+      "type": "@n8n/n8n-nodes-langchain.retrieverVectorStore",
+      "typeVersion": 1,
+      "position": [872, 352],
+      "id": "luxe-retriever-11",
+      "name": "Vector Retriever (Top 5)"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are the premium AI concierge for Luxe Studio, a luxury unisex grooming & styling salon on the Upper East Side of New York City.\n\n**Your Personality:**\n- Warm, sophisticated, and welcoming — like a concierge at a 5-star hotel\n- Confident but never arrogant\n- Use the visitor's name ({{ $('Parse Chat Message').item.json.userName }}) when appropriate\n- Keep responses concise and luxurious in tone\n\n**Your Capabilities:**\n- Answer questions about services, pricing, operating hours, and location\n- Guide visitors to book appointments via Cal.com\n- Share information about the salon experience and what to expect\n- Provide directions and contact information\n\n**Important Guidelines:**\n1. **Never provide medical advice** about scalp conditions — direct to a dermatologist\n2. **Never guarantee specific results** — styling outcomes depend on hair type\n3. **Always guide toward booking** — the goal is to convert visitors into appointments\n4. **Be concise** — keep responses under 150 words when possible\n5. **Clarify when unsure** — suggest calling +1 (212) 555-0199\n6. **For emergencies or complex requests** — direct to call the salon\n\n**Key Links:**\n- Book appointment: https://cal.com/luxe-studio/appointment\n- Call salon: +1 (212) 555-0199\n- Address: 1080 Madison Avenue, New York, NY 10028\n\n**Context from Knowledge Base:**\n{context}\n\n**Current Question:**\n{{ $('Parse Chat Message').item.json.userMessage }}\n\n**Your Response:**\nProvide a helpful, accurate answer based on the knowledge base. Match the premium brand tone. If greeting, respond warmly and ask how you can help.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainRetrievalQa",
+      "typeVersion": 1.5,
+      "position": [880, 128],
+      "id": "luxe-rag-12",
+      "name": "RAG QA Chain"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Format AI response for the Luxe Studio chat widget\n * Add contextual quick action buttons\n */\n\nconst chatResponse = $input.first().json;\nconst userMessage = $('Parse Chat Message').item.json.userMessage;\nconst messageLower = userMessage.toLowerCase();\n\nlet responseText = chatResponse.output || chatResponse.text || chatResponse.response || \"I apologize, but I couldn't process that. Please call us at +1 (212) 555-0199.\";\n\nconst quickActions = [];\n\n// Appointment-related\nif (messageLower.includes(\"appoint\") || messageLower.includes(\"schedule\") || messageLower.includes(\"book\") || messageLower.includes(\"reserv\")) {\n  quickActions.push({\n    label: \"📅 Book Appointment\",\n    url: \"https://cal.com/luxe-studio/appointment\",\n    type: \"link\"\n  });\n}\n\n// Hours/contact\nif (messageLower.includes(\"hour\") || messageLower.includes(\"open\") || messageLower.includes(\"call\") || messageLower.includes(\"contact\") || messageLower.includes(\"phone\")) {\n  quickActions.push({\n    label: \"📞 Call Us\",\n    action: \"tel:+12125550199\",\n    type: \"phone\"\n  });\n}\n\n// Services/pricing\nif (messageLower.includes(\"service\") || messageLower.includes(\"price\") || messageLower.includes(\"cost\") || messageLower.includes(\"offer\")) {\n  quickActions.push({\n    label: \"💇 View Services\",\n    action: \"#services\",\n    type: \"scroll\"\n  });\n}\n\n// Location/directions\nif (messageLower.includes(\"where\") || messageLower.includes(\"address\") || messageLower.includes(\"locat\") || messageLower.includes(\"direction\") || messageLower.includes(\"find\")) {\n  quickActions.push({\n    label: \"📍 Get Directions\",\n    url: \"https://maps.google.com/?q=1080+Madison+Avenue+New+York+NY+10028\",\n    type: \"link\"\n  });\n}\n\n// Default actions if none matched\nif (quickActions.length === 0) {\n  quickActions.push(\n    { label: \"📅 Book Appointment\", url: \"https://cal.com/luxe-studio/appointment\", type: \"link\" },\n    { label: \"📞 Call Us\", action: \"tel:+12125550199\", type: \"phone\" }\n  );\n}\n\nconsole.log(`✅ Luxe Response | Length: ${responseText.length} | Actions: ${quickActions.length}`);\n\nreturn [{\n  json: {\n    response: responseText,\n    quickActions: quickActions.slice(0, 3),\n    timestamp: new Date().toISOString(),\n    sessionId: $('Parse Chat Message').item.json.sessionId,\n    userName: $('Parse Chat Message').item.json.userName\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1240, 232],
+      "id": "luxe-format-13",
+      "name": "Format Response with Quick Actions"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"success\": true,\n  \"response\": $json.response,\n  \"quickActions\": $json.quickActions,\n  \"sessionId\": $json.sessionId,\n  \"timestamp\": $json.timestamp\n} }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "Access-Control-Allow-Origin", "value": "*" }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1464, 136],
+      "id": "luxe-respond-14",
+      "name": "Webhook Response: Success"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"success\": false,\n  \"response\": $json.response || \"I'm having trouble right now. Please call us at +1 (212) 555-0199.\",\n  \"sessionId\": $json.sessionId,\n  \"quickActions\": [\n    { \"label\": \"📞 Call Us\", \"action\": \"tel:+12125550199\", \"type\": \"phone\" }\n  ],\n  \"timestamp\": new Date().toISOString()\n} }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "Access-Control-Allow-Origin", "value": "*" }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [944, 720],
+      "id": "luxe-error-15",
+      "name": "Webhook Response: Error"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Log chat interaction to Google Sheet + check for lead signals\n */\n\nconst userMessage = $('Parse Chat Message').item.json.userMessage;\nconst aiResponse = $input.first().json.response;\nconst sessionId = $input.first().json.sessionId;\nconst userName = $input.first().json.userName;\nconst messageLower = userMessage.toLowerCase();\n\n// Detect lead intent (booking, pricing interest, contact request)\nconst leadKeywords = [\"book\", \"appointment\", \"schedule\", \"price\", \"cost\", \"how much\", \"phone\", \"email\", \"contact\", \"call me\"];\nconst isLead = leadKeywords.some(k => messageLower.includes(k));\n\nreturn [{\n  json: {\n    Timestamp: new Date().toISOString(),\n    Session_ID: sessionId,\n    User_Name: userName,\n    User_Message: userMessage,\n    AI_Response: aiResponse.substring(0, 500),\n    Message_Length: userMessage.length,\n    Response_Length: aiResponse.length,\n    Is_Lead: isLead ? \"YES\" : \"NO\",\n    Quick_Actions_Count: $input.first().json.quickActions?.length || 0\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1464, 328],
+      "id": "luxe-log-16",
+      "name": "Prepare Log Entry"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Chat_Logs",
+          "mode": "list",
+          "cachedResultName": "Chat_Logs"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [1688, 232],
+      "id": "luxe-sheet-17",
+      "name": "Log to Google Sheet",
+      "continueOnFail": true,
+      "notes": "Create a Google Sheet named 'Luxe_Studio_CRM' with a tab 'Chat_Logs' and columns: Timestamp, Session_ID, User_Name, User_Message, AI_Response, Message_Length, Response_Length, Is_Lead, Quick_Actions_Count"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.Is_Lead }}",
+              "rightValue": "YES",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1688, 432],
+      "id": "luxe-leadcheck-18",
+      "name": "Is Lead?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{YOUR_BOT_TOKEN}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "YOUR_CHAT_ID"
+            },
+            {
+              "name": "text",
+              "value": "=🔥 *Luxe Studio — New Lead!*\n\n👤 *Visitor:* {{ $('Prepare Log Entry').item.json.User_Name }}\n💬 *Message:* {{ $('Prepare Log Entry').item.json.User_Message }}\n🤖 *AI Response:* {{ $('Prepare Log Entry').item.json.AI_Response.substring(0, 200) }}\n🕐 *Time:* {{ $('Prepare Log Entry').item.json.Timestamp }}\n🔑 *Session:* {{ $('Prepare Log Entry').item.json.Session_ID }}"
+            },
+            {
+              "name": "parse_mode",
+              "value": "Markdown"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1912, 432],
+      "id": "luxe-telegram-19",
+      "name": "🔔 Telegram Lead Alert",
+      "continueOnFail": true,
+      "notes": "Replace YOUR_BOT_TOKEN and YOUR_CHAT_ID with your Telegram bot credentials"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook: Chat Message": {
+      "main": [[{ "node": "Parse Chat Message", "type": "main", "index": 0 }]]
+    },
+    "Parse Chat Message": {
+      "main": [[{ "node": "Valid Message?", "type": "main", "index": 0 }]]
+    },
+    "Valid Message?": {
+      "main": [
+        [{ "node": "Webhook Response: Error", "type": "main", "index": 0 }],
+        [
+          { "node": "Read Knowledge Base", "type": "main", "index": 0 },
+          { "node": "RAG QA Chain", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Read Knowledge Base": {
+      "main": [[{ "node": "Load Knowledge Base Document", "type": "main", "index": 0 }]]
+    },
+    "Load Knowledge Base Document": {
+      "main": [[{ "node": "In-Memory Vector Store", "type": "main", "index": 0 }]]
+    },
+    "Split into Chunks": {
+      "ai_textSplitter": [[{ "node": "Load Knowledge Base Document", "type": "ai_textSplitter", "index": 0 }]]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [[{ "node": "In-Memory Vector Store", "type": "ai_embedding", "index": 0 }]]
+    },
+    "In-Memory Vector Store": {
+      "ai_vectorStore": [[{ "node": "Vector Retriever (Top 5)", "type": "ai_vectorStore", "index": 0 }]]
+    },
+    "Vector Retriever (Top 5)": {
+      "ai_retriever": [[{ "node": "RAG QA Chain", "type": "ai_retriever", "index": 0 }]]
+    },
+    "OpenAI Chat Model (GPT-4o)": {
+      "ai_languageModel": [[{ "node": "RAG QA Chain", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Chat Memory (10 messages)": {
+      "ai_memory": [[{ "node": "RAG QA Chain", "type": "ai_memory", "index": 0 }]]
+    },
+    "RAG QA Chain": {
+      "main": [[{ "node": "Format Response with Quick Actions", "type": "main", "index": 0 }]]
+    },
+    "Format Response with Quick Actions": {
+      "main": [
+        [
+          { "node": "Webhook Response: Success", "type": "main", "index": 0 },
+          { "node": "Prepare Log Entry", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Prepare Log Entry": {
+      "main": [
+        [
+          { "node": "Log to Google Sheet", "type": "main", "index": 0 },
+          { "node": "Is Lead?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Is Lead?": {
+      "main": [[], [{ "node": "🔔 Telegram Lead Alert", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": ["luxe-studio", "chatbot", "website"]
+}

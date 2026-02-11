@@ -1,0 +1,144 @@
+{
+  "name": "Luxe Studio — Newsletter Lead Capture",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "luxe-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "id": "lead-webhook-01",
+      "name": "Webhook: Newsletter Signup",
+      "webhookId": "luxe-lead"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Validate and format newsletter signup data\n */\n\nconst data = $input.first().json;\nconst email = (data.email || '').trim().toLowerCase();\nconst source = data.source || 'website';\n\n// Basic email validation\nconst emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\nif (!email || !emailRegex.test(email)) {\n  return [{\n    json: {\n      error: true,\n      message: 'Invalid email address'\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    email: email,\n    source: source,\n    timestamp: new Date().toISOString(),\n    error: false\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [424, 300],
+      "id": "lead-validate-02",
+      "name": "Validate Email"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [648, 300],
+      "id": "lead-check-03",
+      "name": "Valid?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": false, \"message\": $json.message || \"Invalid email\" } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "Access-Control-Allow-Origin", "value": "*" }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [872, 450],
+      "id": "lead-error-04",
+      "name": "Response: Error"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Newsletter_Leads",
+          "mode": "list",
+          "cachedResultName": "Newsletter_Leads"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [872, 200],
+      "id": "lead-sheet-05",
+      "name": "Save to Google Sheet",
+      "continueOnFail": true,
+      "notes": "Use same 'Luxe_Studio_CRM' sheet with a 'Newsletter_Leads' tab. Columns: email, source, timestamp"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Thanks for subscribing!\" } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "Access-Control-Allow-Origin", "value": "*" }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1096, 200],
+      "id": "lead-success-06",
+      "name": "Response: Success"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook: Newsletter Signup": {
+      "main": [[{ "node": "Validate Email", "type": "main", "index": 0 }]]
+    },
+    "Validate Email": {
+      "main": [[{ "node": "Valid?", "type": "main", "index": 0 }]]
+    },
+    "Valid?": {
+      "main": [
+        [{ "node": "Response: Error", "type": "main", "index": 0 }],
+        [{ "node": "Save to Google Sheet", "type": "main", "index": 0 }]
+      ]
+    },
+    "Save to Google Sheet": {
+      "main": [[{ "node": "Response: Success", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": ["luxe-studio", "lead-capture", "newsletter"]
+}
