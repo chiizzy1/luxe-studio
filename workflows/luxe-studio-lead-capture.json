@@ -27,21 +27,28 @@
     {
       "parameters": {
         "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
+              "id": "cond-lead-valid-01",
               "leftValue": "={{ $json.error }}",
-              "rightValue": "true",
+              "rightValue": true,
               "operator": {
                 "type": "boolean",
                 "operation": "equals"
               }
             }
-          ]
+          ],
+          "combinator": "and"
         },
         "options": {}
       },
       "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
+      "typeVersion": 2,
       "position": [648, 300],
       "id": "lead-check-03",
       "name": "Valid?"

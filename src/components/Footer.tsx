@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 import { BRAND_NAME, FOOTER, OPERATING_HOURS } from "../data/mockData";
 
-const N8N_LEAD_WEBHOOK_URL = "https://your-n8n-instance.com/webhook/luxe-lead";
+const N8N_LEAD_WEBHOOK_URL = "https://izzyd.app.n8n.cloud/webhook/luxe-lead";
 
 type FormStatus = "idle" | "loading" | "success" | "error";
 

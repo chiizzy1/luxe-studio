@@ -5,6 +5,8 @@ import {
   GREETING_MESSAGE,
   QUICK_REPLIES,
   TYPING_DELAY_MS,
+  PROACTIVE_TRIGGER_DELAY_MS,
+  getBrowserLanguage,
   type ChatMessage,
   type QuickAction,
 } from "../data/chatData";
@@ -27,12 +29,68 @@ function getSessionId(): string {
   return id;
 }
 
+/**
+ * Determines the status card style based on message type.
+ * Returns icon, label, and color classes for confirmation cards.
+ */
+function getStatusCard(
+  msg: ChatMessage,
+): { icon: string; label: string; colorClass: string; borderClass: string; bgClass: string } | null {
+  if (msg.isBookingConfirmation) {
+    return {
+      icon: "check_circle",
+      label: "Booking Confirmed",
+      colorClass: "text-emerald-400",
+      borderClass: "border-emerald-500/20",
+      bgClass: "bg-emerald-900/30",
+    };
+  }
+  if (msg.isRescheduleConfirmation) {
+    return {
+      icon: "update",
+      label: "Rescheduled",
+      colorClass: "text-blue-400",
+      borderClass: "border-blue-500/20",
+      bgClass: "bg-blue-900/30",
+    };
+  }
+  if (msg.isCancellationConfirmation) {
+    return {
+      icon: "cancel",
+      label: "Cancelled",
+      colorClass: "text-red-400",
+      borderClass: "border-red-500/20",
+      bgClass: "bg-red-900/30",
+    };
+  }
+  if (msg.isHandoff) {
+    return {
+      icon: "support_agent",
+      label: "Live Support",
+      colorClass: "text-amber-400",
+      borderClass: "border-amber-500/20",
+      bgClass: "bg-amber-900/30",
+    };
+  }
+  if (msg.isComplaint) {
+    return {
+      icon: "feedback",
+      label: "We're On It",
+      colorClass: "text-orange-400",
+      borderClass: "border-orange-500/20",
+      bgClass: "bg-orange-900/30",
+    };
+  }
+  return null;
+}
+
 export const ChatWidget: React.FC<ChatWidgetProps> = ({ className = "" }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING_MESSAGE]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [hasUnread, setHasUnread] = useState(true);
+  const [proactiveShown, setProactiveShown] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -50,6 +108,45 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ className = "" }) => {
       inputRef.current?.focus();
     }
   }, [isOpen]);
+
+  // Proactive engagement: auto-open chat after user lingers on booking section
+  useEffect(() => {
+    if (proactiveShown || isOpen) return;
+
+    const timer = setTimeout(() => {
+      const bookingSection = document.getElementById("booking") ?? document.getElementById("cta");
+      if (!bookingSection) return;
+
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setIsOpen(true);
+            setProactiveShown(true);
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: generateId(),
+                role: "assistant",
+                text: "I noticed you're looking at booking! 👀 Want me to check available time slots for you, or would you prefer to book online yourself?",
+                quickActions: [
+                  { label: "🤖 Help Me Book", url: undefined, action: undefined, type: "scroll" },
+                  { label: "📅 Book Online", url: "https://cal.com/izzydev-studio/30min", type: "link" },
+                ],
+                timestamp: Date.now(),
+              },
+            ]);
+            observer.disconnect();
+          }
+        },
+        { threshold: 0.5 },
+      );
+
+      observer.observe(bookingSection);
+      return () => observer.disconnect();
+    }, PROACTIVE_TRIGGER_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, [proactiveShown, isOpen]);
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -74,6 +171,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ className = "" }) => {
             message: text.trim(),
             sessionId: getSessionId(),
             userName: "Visitor",
+            language: getBrowserLanguage(),
           }),
         });
 
@@ -84,6 +182,12 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ className = "" }) => {
           role: "assistant",
           text: data.response || "I apologize, but I couldn't process that. Please try again or call us at +1 (212) 555-0199.",
           quickActions: data.quickActions as QuickAction[] | undefined,
+          availableSlots: data.availableSlots as string[] | undefined,
+          isBookingConfirmation: data.isBookingConfirmation as boolean | undefined,
+          isRescheduleConfirmation: data.isRescheduleConfirmation as boolean | undefined,
+          isCancellationConfirmation: data.isCancellationConfirmation as boolean | undefined,
+          isHandoff: data.isHandoff as boolean | undefined,
+          isComplaint: data.isComplaint as boolean | undefined,
           timestamp: Date.now(),
         };
 
@@ -101,7 +205,10 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ className = "" }) => {
               id: generateId(),
               role: "assistant",
               text: "I'm having trouble connecting right now. Please call us at +1 (212) 555-0199 or try again in a moment.",
-              quickActions: [{ label: "📞 Call Us", action: "tel:+12125550199", type: "phone" }],
+              quickActions: [
+                { label: "📞 Call Us", action: "tel:+12125550199", type: "phone" },
+                { label: "💬 WhatsApp", url: "https://wa.me/12125550199", type: "link" },
+              ],
               timestamp: Date.now(),
             },
           ]);
@@ -159,37 +266,66 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ className = "" }) => {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 scrollbar-thin">
-              {messages.map((msg) => (
-                <motion.div
-                  key={msg.id}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ type: "spring", duration: 0.3, bounce: 0 }}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-lg px-4 py-2.5 text-sm leading-relaxed ${
-                      msg.role === "user" ? "bg-primary text-editorial-dark font-medium" : "bg-white/5 text-gray-200"
-                    }`}
-                  >
-                    <p className="whitespace-pre-wrap">{msg.text}</p>
+              {messages.map((msg) => {
+                const statusCard = msg.role === "assistant" ? getStatusCard(msg) : null;
 
-                    {msg.quickActions && msg.quickActions.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        {msg.quickActions.map((action) => (
-                          <button
-                            key={action.label}
-                            onClick={() => handleQuickAction(action)}
-                            className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider border border-primary/30 text-primary rounded-sm hover:bg-primary/10 transition-colors"
-                          >
-                            {action.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
+                return (
+                  <motion.div
+                    key={msg.id}
+                    className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+                  >
+                    <div
+                      className={`max-w-[85%] rounded-lg px-4 py-2.5 text-sm leading-relaxed ${
+                        msg.role === "user"
+                          ? "bg-primary text-editorial-dark font-medium"
+                          : statusCard
+                            ? `${statusCard.bgClass} border ${statusCard.borderClass} text-gray-200`
+                            : "bg-white/5 text-gray-200"
+                      }`}
+                    >
+                      {statusCard && (
+                        <div className={`flex items-center gap-2 mb-2 ${statusCard.colorClass}`}>
+                          <span className="material-icons text-base">{statusCard.icon}</span>
+                          <span className="text-xs font-bold uppercase tracking-widest">{statusCard.label}</span>
+                        </div>
+                      )}
+
+                      <p className="whitespace-pre-wrap">{msg.text}</p>
+
+                      {msg.availableSlots && msg.availableSlots.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {msg.availableSlots.map((slot) => (
+                            <button
+                              key={slot}
+                              onClick={() => sendMessage(slot)}
+                              className="px-3 py-1.5 text-xs font-bold border border-primary/40 text-primary rounded-sm hover:bg-primary hover:text-editorial-dark transition-colors"
+                            >
+                              {slot}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {msg.quickActions && msg.quickActions.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {msg.quickActions.map((action) => (
+                            <button
+                              key={action.label}
+                              onClick={() => handleQuickAction(action)}
+                              className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider border border-primary/30 text-primary rounded-sm hover:bg-primary/10 transition-colors"
+                            >
+                              {action.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
 
               {isTyping && (
                 <motion.div className="flex justify-start" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>

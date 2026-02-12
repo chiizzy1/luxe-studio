@@ -53,10 +53,36 @@ Free street parking available nearby. We are located between 81st and 82nd Stree
 
 ## Booking Information
 
-- **Online booking**: Clients can book appointments through our Cal.com scheduling page
+- **Online booking**: Clients can book appointments through our Chat Concierge or Cal.com scheduling page
 - **Walk-ins**: We accept walk-ins Monday through Friday, subject to availability
 - **Cancellation policy**: Please cancel at least 24 hours in advance to avoid a cancellation fee
 - **Booking link**: https://cal.com/luxe-studio/appointment
+
+### Service Durations
+
+| Service      | Duration       | Price     |
+| ------------ | -------------- | --------- |
+| Cut & Style  | 60 minutes     | From $85  |
+| Color Theory | 90–120 minutes | From $120 |
+| Treatment    | 45 minutes     | From $60  |
+| Grooming     | 30 minutes     | From $55  |
+
+### What We Need to Book
+
+To complete an appointment booking, we need:
+
+1. **Preferred date and time** — the AI concierge will check live availability
+2. **Full name** — for the booking confirmation
+3. **Email address** — for confirmation and reminders
+4. **Phone number** — for same-day reminders and rescheduling
+5. **Service type** — Cut & Style, Color Theory, Treatment, or Grooming
+
+### Appointment Reminders
+
+Clients receive automatic reminders:
+
+- **24 hours before** via email
+- **1 hour before** via SMS (if phone number provided)
 
 ---
 
@@ -99,6 +125,19 @@ We use premium professional-grade products selected for quality and results. Our
 - Instagram: @luxestudio
 - Facebook: Luxe Studio NYC
 - Pinterest: Luxe Studio
+
+---
+
+## Complaints & Satisfaction Guarantee
+
+At Luxe Studio, client satisfaction is our top priority. If you're not happy with your service:
+
+1. **Contact us within 48 hours** of your appointment — call +1 (212) 555-0199 or message us on WhatsApp
+2. **Complimentary correction**: We'll schedule a free correction appointment with a senior stylist
+3. **Refund policy**: If a correction isn't possible or desired, we offer a full refund for the service
+4. **Cancellation fees**: Appointments cancelled within 24 hours incur a $25 cancellation fee, which may be waived at the manager's discretion for first-time occurrences
+
+We take all feedback seriously and use it to improve our services. Our management team reviews every complaint personally.
 
 ---
 
