@@ -54,7 +54,7 @@ export const HERO = {
     "Experience the pinnacle of unisex grooming in an atmosphere of refined luxury. We don't just cut hair; we curate your personal aesthetic.",
   cta: { label: "Explore Collection", href: "#explore" },
   vogue: { quote: '"Iconic."', attribution: "— Vogue Feature" },
-  portraitSrc: "https://images.pexels.com/photos/3065209/pexels-photo-3065209.jpeg?auto=compress&cs=tinysrgb&w=800",
+  portraitSrc: "/hero-portrait.jpeg",
   portraitAlt: "High fashion editorial portrait",
 } as const;
 
@@ -102,9 +102,9 @@ export const SERVICES: readonly Service[] = [
 
 export const THE_CRAFT = {
   tagline: "Every cut tells a story. Every style is a signature.",
-  videoSrc: "https://images.pexels.com/photos/3993449/pexels-photo-3993449.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  videoSrc: "/craft-video.mp4",
   videoAlt: "Stylist mid-craft in warm intimate lighting",
-  backgroundSrc: "https://images.pexels.com/photos/1813272/pexels-photo-1813272.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  backgroundSrc: "/craft-bg.jpeg",
   backgroundAlt: "Blurred warm luxury salon interior",
 } as const;
 
@@ -117,28 +117,38 @@ export const GALLERY = {
   featureDescription: "Exploring texture and form through our latest seasonal cuts.",
   galleryImages: [
     {
-      src: "https://images.pexels.com/photos/2589653/pexels-photo-2589653.jpeg?auto=compress&cs=tinysrgb&w=800",
+      src: "/01.jpeg",
       alt: "Close up portrait of a man with well groomed hair and beard",
-      label: "01 / 04",
+      label: "01 / 06",
     },
     {
-      src: "https://images.pexels.com/photos/1570807/pexels-photo-1570807.jpeg?auto=compress&cs=tinysrgb&w=800",
+      src: "/02.jpeg",
       alt: "Woman with elegant updo hairstyle",
-      label: "02 / 04",
+      label: "02 / 06",
     },
     {
-      src: "https://images.pexels.com/photos/1043474/pexels-photo-1043474.jpeg?auto=compress&cs=tinysrgb&w=800",
+      src: "/03.png",
       alt: "Man with sharp modern fade haircut",
-      label: "03 / 04",
+      label: "03 / 06",
     },
     {
-      src: "https://images.pexels.com/photos/3065171/pexels-photo-3065171.jpeg?auto=compress&cs=tinysrgb&w=800",
+      src: "/04.jpeg",
       alt: "Artistic hairstyle from behind showing texture and curls",
-      label: "04 / 04",
+      label: "04 / 06",
+    },
+    {
+      src: "/05.jpeg",
+      alt: "Portrait of a Black woman with intricate, sculptural cornrows",
+      label: "05 / 06",
+    },
+    {
+      src: "/06.jpeg",
+      alt: "Side profile of a Black man with a precision-cut geometric afro fade",
+      label: "06 / 06",
     },
   ],
   portraitFemale: {
-    src: "https://images.pexels.com/photos/3065171/pexels-photo-3065171.jpeg?auto=compress&cs=tinysrgb&w=800",
+    src: "/gallery.png",
     alt: "Artistic portrait of a woman with fashion forward hairstyle",
   },
 } as const;

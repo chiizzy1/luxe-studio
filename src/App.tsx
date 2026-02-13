@@ -14,8 +14,9 @@ import ChatWidget from "./components/ChatWidget";
 function App() {
   return (
     <>
-      <ScrollProgress />
-      <ChatWidget />
+      {/* <ScrollProgress /> */}
+      {/* Hide ChatWidget during video recording to avoid double bubbles */}
+      {!window.location.search.includes("recording=true") && <ChatWidget />}
       <Navbar />
       <Hero />
       <BrandStatement />

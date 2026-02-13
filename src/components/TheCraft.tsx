@@ -22,7 +22,7 @@ export const TheCraft: React.FC<TheCraftProps> = ({ className = "" }) => {
         <motion.img
           src={THE_CRAFT.backgroundSrc}
           alt={THE_CRAFT.backgroundAlt}
-          className="w-full h-full object-cover blur-[50px] opacity-40 scale-110"
+          // className="w-full h-full object-cover blur-[50px] opacity-40 scale-110"
           style={{ y }}
         />
         <div className="absolute inset-0 bg-black/60 z-10" />
@@ -62,9 +62,12 @@ export const TheCraft: React.FC<TheCraftProps> = ({ className = "" }) => {
           >
             <div className="relative w-full aspect-video border border-editorial-dark/80 bg-black overflow-hidden shadow-2xl">
               <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-500 z-10" />
-              <motion.img
+              <motion.video
                 src={THE_CRAFT.videoSrc}
-                alt={THE_CRAFT.videoAlt}
+                // alt={THE_CRAFT.videoAlt}
+                autoPlay
+                loop
+                muted
                 className="w-full h-full object-cover opacity-90"
                 whileHover={{ scale: 1.05 }}
                 transition={{ duration: 0.7, ease: "easeOut" }}

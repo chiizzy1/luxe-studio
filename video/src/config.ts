@@ -15,12 +15,15 @@ export const FPS = 30;
 
 /* Scene durations in seconds */
 export const SCENE_DURATIONS = {
-  brandIntro: 4,
-  heroShowcase: 5,
-  servicesReveal: 4.5,
-  gallerySpotlight: 4.5,
-  ctaOutro: 3,
+  brandIntro: 3.5,
+  heroShowcase: 4,
+  servicesReveal: 3.5,
+  gallerySpotlight: 3.5,
+  bookingShowcase: 3.5,
+  hookTransition: 3,
+  chatbotDemo: 14,
+  ctaOutro: 3.5,
 } as const;
 
 /* Transition duration in frames */
-export const TRANSITION_FRAMES = 15;
+export const TRANSITION_FRAMES = 12;

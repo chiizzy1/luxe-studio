@@ -7,6 +7,9 @@ import { BrandIntro } from "./scenes/BrandIntro";
 import { HeroShowcase } from "./scenes/HeroShowcase";
 import { ServicesReveal } from "./scenes/ServicesReveal";
 import { GallerySpotlight } from "./scenes/GallerySpotlight";
+import { BookingShowcase } from "./scenes/BookingShowcase";
+import { HookTransition } from "./scenes/HookTransition";
+import { ChatbotDemo } from "./scenes/ChatbotDemo";
 import { CtaOutro } from "./scenes/CtaOutro";
 import { SCENE_DURATIONS, FPS, TRANSITION_FRAMES } from "./config";
 
@@ -19,7 +22,6 @@ export const LuxePromo: React.FC = () => {
           <BrandIntro />
         </TransitionSeries.Sequence>
 
-        {/* Transition: Fade into hero */}
         <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: TRANSITION_FRAMES })} />
 
         {/* Scene 2: Hero Showcase */}
@@ -27,7 +29,6 @@ export const LuxePromo: React.FC = () => {
           <HeroShowcase />
         </TransitionSeries.Sequence>
 
-        {/* Transition: Slide left into services */}
         <TransitionSeries.Transition
           presentation={slide({ direction: "from-right" })}
           timing={linearTiming({ durationInFrames: TRANSITION_FRAMES })}
@@ -38,7 +39,6 @@ export const LuxePromo: React.FC = () => {
           <ServicesReveal />
         </TransitionSeries.Sequence>
 
-        {/* Transition: Wipe into gallery */}
         <TransitionSeries.Transition
           presentation={wipe({ direction: "from-left" })}
           timing={linearTiming({ durationInFrames: TRANSITION_FRAMES })}
@@ -49,10 +49,33 @@ export const LuxePromo: React.FC = () => {
           <GallerySpotlight />
         </TransitionSeries.Sequence>
 
-        {/* Transition: Fade to CTA */}
+        <TransitionSeries.Transition
+          presentation={slide({ direction: "from-right" })}
+          timing={linearTiming({ durationInFrames: TRANSITION_FRAMES })}
+        />
+
+        {/* Scene 5: Booking Showcase */}
+        <TransitionSeries.Sequence durationInFrames={SCENE_DURATIONS.bookingShowcase * FPS}>
+          <BookingShowcase />
+        </TransitionSeries.Sequence>
+
         <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: TRANSITION_FRAMES })} />
 
-        {/* Scene 5: CTA Outro */}
+        {/* Scene 6: Hook Transition — "Beautiful. Intelligent. Always On." */}
+        <TransitionSeries.Sequence durationInFrames={SCENE_DURATIONS.hookTransition * FPS}>
+          <HookTransition />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: TRANSITION_FRAMES })} />
+
+        {/* Scene 7: Chatbot Demo */}
+        <TransitionSeries.Sequence durationInFrames={SCENE_DURATIONS.chatbotDemo * FPS}>
+          <ChatbotDemo />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: TRANSITION_FRAMES })} />
+
+        {/* Scene 8: CTA Outro */}
         <TransitionSeries.Sequence durationInFrames={SCENE_DURATIONS.ctaOutro * FPS}>
           <CtaOutro />
         </TransitionSeries.Sequence>
