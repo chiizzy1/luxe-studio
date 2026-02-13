@@ -8,7 +8,6 @@ import Testimonial from "./components/Testimonial";
 import Marquee from "./components/Marquee";
 import BookingCTA from "./components/BookingCTA";
 import Footer from "./components/Footer";
-import ScrollProgress from "./components/ScrollProgress";
 import ChatWidget from "./components/ChatWidget";
 
 function App() {
