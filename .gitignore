@@ -27,3 +27,7 @@ dist-ssr
 video/
 workflows/
 .agents/
+
+# Ignore all markdown files except README
+*.md
+!README.md
